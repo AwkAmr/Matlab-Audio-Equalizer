@@ -343,9 +343,15 @@ guidata(hFig,data);
             end
             
             % Process audio with custom settings
-            processAudio(d, true);
+            d = processAudio(d, true); % Get the updated handles
+            guidata(hFig, d); % Store the updated handles
             
-            guidata(hFig, d);
+            % Close the custom dialog
+            if ~isempty(d.CustomFig) && ishandle(d.CustomFig)
+                delete(d.CustomFig);
+                d.CustomFig = [];
+                guidata(hFig, d);
+            end
         end
         
         function closeCustomDialog(~,~)
@@ -383,10 +389,11 @@ guidata(hFig,data);
         
         % Process in standard mode (9 bands)
         d.CustomProcessing = false;
-        processAudio(d, false);
+        d = processAudio(d, false);
+        guidata(hFig, d);
     end
 
-    function processAudio(d, isCustom)
+    function d = processAudio(d, isCustom)
         try
             if isCustom
                 % Process with custom settings
@@ -476,15 +483,14 @@ guidata(hFig,data);
             
             % Store results
             d.OutputSignal = out;
-            d.Player = audioplayer(out, newFS);
+            d.Player = audioplayer(out, newFS); % Always create player
             d.Filters = filters; 
             d.CurrentFig = 1; 
             d.Bands = bands;
             d.BandNum = numBands;
-            guidata(hFig, d); 
             
             % Plot the first band
-            plotCycle(1);
+            plotCycle(d, 1);
             
             msgbox('Audio processed successfully!', 'Success', 'help');
         catch ME
@@ -492,8 +498,7 @@ guidata(hFig,data);
         end
     end
 
-    function plotCycle(idx)
-        d = guidata(hFig); 
+    function plotCycle(d, idx)
         if idx < 1 || idx > d.BandNum, return; end
         
         % Clear and prepare axes
@@ -555,7 +560,7 @@ guidata(hFig,data);
         d = guidata(hFig); 
         if ~isempty(d.Filters)
             newIdx = max(1, d.CurrentFig-1);
-            plotCycle(newIdx);
+            plotCycle(d, newIdx);
         end
     end
 
@@ -563,13 +568,13 @@ guidata(hFig,data);
         d = guidata(hFig); 
         if ~isempty(d.Filters)
             newIdx = min(d.BandNum, d.CurrentFig+1);
-            plotCycle(newIdx);
+            plotCycle(d, newIdx);
         end
     end
 
     function onPlay(~,~)
         d = guidata(hFig); 
-        if ~isempty(d.Player)
+        if isfield(d, 'Player') && ~isempty(d.Player) && isvalid(d.Player)
             if d.Playing
                 stop(d.Player);
             end
@@ -583,7 +588,7 @@ guidata(hFig,data);
 
     function onStop(~,~)
         d = guidata(hFig); 
-        if ~isempty(d.Player) && d.Playing
+        if isfield(d, 'Player') && ~isempty(d.Player) && isvalid(d.Player) && d.Playing
             stop(d.Player);
             d.Playing = false;
             guidata(hFig, d);
