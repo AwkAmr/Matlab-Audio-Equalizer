@@ -444,6 +444,7 @@ guidata(hFig,data);
             
             % Store results
             d.OutputSignal = out;
+            d.newFS = newFS;  
             d.Player = audioplayer(out, newFS);
             d.Filters = filters; 
             d.CurrentFig = 1;
@@ -585,8 +586,8 @@ guidata(hFig,data);
             xlim([-fs/2 fs/2]);
 
             %Outputting 4x and 1/2 sample rate
-            audiowrite('SampleMul4.wav', Y_filt, fs*4);
-            audiowrite('SampleDiv2.wav', Y_filt, fs/2);
+            audiowrite('SampleMul4.wav', d.OutputSignal, d.newFS * 4);
+            audiowrite('SampleDiv2.wav', d.OutputSignal, d.newFS / 2);
         end
         d.CurrentFig = idx;
         guidata(hFig, d);
