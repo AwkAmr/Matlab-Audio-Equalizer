@@ -55,56 +55,37 @@ end
 % Process Audio Button
 uicontrol(hLeft,'Style','pushbutton','String','Process Audio','FontSize',11,'FontWeight','bold','Units','normalized','Position',[0.25 0.01 0.5 rowHeight],'Callback',@onProcessAudio, 'BackgroundColor', [0.8 0.8 1]);
 
-%% Right panel: 7 axes with adjusted layout for poles/zeros and summary
+%% Right panel
 hAxes = gobjects(7,1);
-plotStartY = 0.8; % Adjusted starting Y position
-plotHeight = 0.15; % Reduced height
-verticalStep = 0.2; % Vertical spacing between rows
+plotStartY = 0.8; 
+plotHeight = 0.15; 
+verticalStep = 0.2;
 
-% Create first 6 axes in 3 rows of 2
 for i = 1:6
     row = ceil(i/2);
     col = mod(i-1,2)+1;
     axPos = [0.05 + 0.47*(col-1), plotStartY - verticalStep*(row-1), 0.45, plotHeight];
-    hAxes(i) = axes('Parent',hRight,'Units','normalized','Position',axPos,...
-        'Box','on', 'XGrid','on', 'YGrid','on');
+    hAxes(i) = axes('Parent',hRight,'Units','normalized','Position',axPos,'Box','on', 'XGrid','on', 'YGrid','on');
     axis(hAxes(i), 'on');
 end
 
-% 7th axis for poles and zeros (bottom row spanning two columns)
 axPos = [0.05, plotStartY - verticalStep*3, 0.9, plotHeight];
-hAxes(7) = axes('Parent',hRight,'Units','normalized','Position',axPos,...
-    'Box','on', 'XGrid','on', 'YGrid','on');
+hAxes(7) = axes('Parent',hRight,'Units','normalized','Position',axPos,'Box','on', 'XGrid','on', 'YGrid','on');
 axis(hAxes(7), 'on');
 
-% Navigation & playback controls (BOTTOM - won't collide with plots)
+% Navigation controls
 controlY = 0.02;
 controlHeight = 0.06;
-uicontrol(hRight,'Style','pushbutton','String','< Previous','FontSize',11,...
-    'Units','normalized','Position',[0.25 controlY 0.12 controlHeight],...
-    'Callback',@onPrevPlot, 'BackgroundColor',[0.9 0.9 1]);
-uicontrol(hRight,'Style','pushbutton','String','Next >','FontSize',11,...
-    'Units','normalized','Position',[0.38 controlY 0.12 controlHeight],...
-    'Callback',@onNextPlot, 'BackgroundColor',[0.9 0.9 1]);
-uicontrol(hRight,'Style','pushbutton','String','Play','FontSize',11,...
-    'FontWeight','bold','Units','normalized','Position',[0.52 controlY 0.12 controlHeight],...
-    'Callback',@onPlay, 'BackgroundColor',[0.7 1 0.7]);
-uicontrol(hRight,'Style','pushbutton','String','Stop','FontSize',11,...
-    'FontWeight','bold','Units','normalized','Position',[0.65 controlY 0.12 controlHeight],...
-    'Callback',@onStop, 'BackgroundColor',[1 0.7 0.7]);
+uicontrol(hRight,'Style','pushbutton','String','< Previous','FontSize',11,'Units','normalized','Position',[0.25 controlY 0.12 controlHeight],'Callback',@onPrevPlot, 'BackgroundColor',[0.9 0.9 1]);
+uicontrol(hRight,'Style','pushbutton','String','Next >','FontSize',11,'Units','normalized','Position',[0.38 controlY 0.12 controlHeight],'Callback',@onNextPlot, 'BackgroundColor',[0.9 0.9 1]);
+uicontrol(hRight,'Style','pushbutton','String','Play','FontSize',11,'FontWeight','bold','Units','normalized','Position',[0.52 controlY 0.12 controlHeight],'Callback',@onPlay, 'BackgroundColor',[0.7 1 0.7]);
+uicontrol(hRight,'Style','pushbutton','String','Stop','FontSize',11,'FontWeight','bold','Units','normalized','Position',[0.65 controlY 0.12 controlHeight],'Callback',@onStop, 'BackgroundColor',[1 0.7 0.7]);
 
-%% Store data with new parameters
-data = struct(...
-    'hFiltType',hFiltType,'hDesign',hDesign,'hOrder',hOrder,'hRec',hRec,...
-    'hOrigSR',hOrigSR,'hNewSR',hNewSR,'hSliders',{hSliders},'hGainVals',{hGainVals},...
-    'hAxes',{hAxes},'Signal',[],'fs',[],'Filters',[],'BandNum',9,'Player',[],'OutputSignal',[],...
-    'CurrentFig',1, 'Playing', false, 'Bands', [0, 200, 500, 800, 1200, 3000, 6000, 12000, 16000, 20000],...
-    'CustomMode', false, 'CustomBands', [], 'CustomGains', [], 'StandardBands', [0, 200, 500, 800, 1200, 3000, 6000, 12000, 16000, 20000],...
-    'CustomFig', [], 'CustomTable', [], 'CustomProcessing', false,...
-    'ShowSummary', false, 'SummaryPlots', []); % New fields for summary
+%% Store Data
+data = struct('hFiltType',hFiltType,'hDesign',hDesign,'hOrder',hOrder,'hRec',hRec,'hOrigSR',hOrigSR,'hNewSR',hNewSR,'hSliders',{hSliders},'hGainVals',{hGainVals},'hAxes',{hAxes},'Signal',[],'fs',[],'Filters',[],'BandNum',9,'Player',[],'OutputSignal',[],'CurrentFig',1, 'Playing', false, 'Bands', [0, 200, 500, 800, 1200, 3000, 6000, 12000, 16000, 20000],'CustomMode', false, 'CustomBands', [], 'CustomGains', [], 'StandardBands', [0, 200, 500, 800, 1200, 3000, 6000, 12000, 16000, 20000],'CustomFig', [], 'CustomTable', [], 'CustomProcessing', false,'ShowSummary', false, 'SummaryPlots', []); % New fields for summary
 guidata(hFig,data);
 
-%% Callback implementations with ORIGINAL BACKEND LOGIC
+%% Callbacks
     function updateRecommendation(~,~)
         d = guidata(hFig);
         ft = get(d.hFiltType,'Value');
@@ -130,7 +111,7 @@ guidata(hFig,data);
         
         try
             [sig,fs] = audioread(fullfile(p,f));
-            sig = mean(sig,2); % Convert to mono if stereo
+            sig = mean(sig,2); % Convert to mono
             d = guidata(hFig); 
             d.Signal = sig; 
             d.fs = fs;
@@ -146,20 +127,13 @@ guidata(hFig,data);
     function createCustomModeDialog(~,~)
         d = guidata(hFig);
         
-        % Close any existing custom dialog
         if ~isempty(d.CustomFig) && ishandle(d.CustomFig)
             delete(d.CustomFig);
         end
         
-        % Create figure for custom mode settings
-        customFig = figure('Name','Custom Mode Settings','NumberTitle','off',...
-            'MenuBar','none','ToolBar','none','Units','normalized',...
-            'Position',[0.3 0.3 0.4 0.4], 'Color', [0.94 0.94 0.94],...
-            'CloseRequestFcn',@closeCustomDialog);
+        customFig = figure('Name','Custom Mode Settings','NumberTitle','off','MenuBar','none','ToolBar','none','Units','normalized','Position',[0.3 0.3 0.4 0.4], 'Color', [0.94 0.94 0.94],'CloseRequestFcn',@closeCustomDialog);
         
-        % Use existing custom bands if available, otherwise use defaults
-        if ~isempty(d.CustomBands) && ~isempty(d.CustomGains) && ...
-           length(d.CustomBands) == length(d.CustomGains)+1
+        if ~isempty(d.CustomBands) && ~isempty(d.CustomGains) && length(d.CustomBands) == length(d.CustomGains)+1
             numBands = length(d.CustomBands)-1;
             tableData = cell(numBands,3);
             for i = 1:numBands
@@ -168,7 +142,7 @@ guidata(hFig,data);
                 tableData{i,3} = d.CustomGains(i);
             end
         else
-            % Default bands (5 bands)
+            % Default 5 bands
             defaultBands = [0, 500, 1500, 5000, 10000, 20000];
             defaultGains = zeros(1,5);
             
@@ -182,40 +156,25 @@ guidata(hFig,data);
         end
         
         % Create table
-        hTable = uitable(customFig, 'Data', tableData,...
-            'ColumnName', {'Start Freq (Hz)', 'End Freq (Hz)', 'Gain (dB)'},...
-            'ColumnFormat', {'numeric', 'numeric', 'numeric'},...
-            'ColumnEditable', [true true true],...
-            'Units', 'normalized', 'Position', [0.1 0.3 0.8 0.6],...
-            'CellEditCallback', @validateTableInput);
+        hTable = uitable(customFig, 'Data', tableData,'ColumnName', {'Start Freq (Hz)', 'End Freq (Hz)', 'Gain (dB)'},'ColumnFormat', {'numeric', 'numeric', 'numeric'},'ColumnEditable', [true true true],'Units', 'normalized', 'Position', [0.1 0.3 0.8 0.6],'CellEditCallback', @validateTableInput);
         
         % Add row button
-        uicontrol(customFig, 'Style', 'pushbutton', 'String', 'Add Band',...
-            'Units', 'normalized', 'Position', [0.1 0.15 0.2 0.1],...
-            'Callback', @addTableRow, 'BackgroundColor', [0.8 0.9 0.8]);
-        
+        uicontrol(customFig, 'Style', 'pushbutton', 'String', 'Add Band','Units', 'normalized', 'Position', [0.1 0.15 0.2 0.1],'Callback', @addTableRow, 'BackgroundColor', [0.8 0.9 0.8]);
+       
         % Remove row button
-        uicontrol(customFig, 'Style', 'pushbutton', 'String', 'Remove Band',...
-            'Units', 'normalized', 'Position', [0.35 0.15 0.2 0.1],...
-            'Callback', @removeTableRow, 'BackgroundColor', [0.9 0.8 0.8]);
+        uicontrol(customFig, 'Style', 'pushbutton', 'String', 'Remove Band','Units', 'normalized', 'Position', [0.35 0.15 0.2 0.1],'Callback', @removeTableRow, 'BackgroundColor', [0.9 0.8 0.8]);
         
-        % Save button - stores settings without processing
-        uicontrol(customFig, 'Style', 'pushbutton', 'String', 'Save Settings',...
-            'Units', 'normalized', 'Position', [0.6 0.05 0.3 0.08],...
-            'Callback', @saveCustomSettings, 'BackgroundColor', [0.8 0.8 1]);
+        % Save button 
+        uicontrol(customFig, 'Style', 'pushbutton', 'String', 'Save Settings','Units', 'normalized', 'Position', [0.6 0.05 0.3 0.08],'Callback', @saveCustomSettings, 'BackgroundColor', [0.8 0.8 1]);
         
-        % Process button - processes with custom settings
-        uicontrol(customFig, 'Style', 'pushbutton', 'String', 'Process Audio',...
-            'FontWeight','bold','Units', 'normalized', 'Position', [0.6 0.15 0.3 0.08],...
-            'Callback', @processCustomAudio, 'BackgroundColor', [0.7 1 0.7]);
+        % Process button 
+        uicontrol(customFig, 'Style', 'pushbutton', 'String', 'Process Audio','FontWeight','bold','Units', 'normalized', 'Position', [0.6 0.15 0.3 0.08],'Callback', @processCustomAudio, 'BackgroundColor', [0.7 1 0.7]);
         
-        % Store handles
         d.CustomFig = customFig;
         d.CustomTable = hTable;
         guidata(hFig, d);
         
         function validateTableInput(~, event)
-            % Validate frequency inputs
             if event.Indices(2) == 1 || event.Indices(2) == 2
                 newVal = event.NewData;
                 if newVal < 0 || newVal > 20000
@@ -224,7 +183,6 @@ guidata(hFig,data);
                     data{event.Indices(1), event.Indices(2)} = event.PreviousData;
                     set(hTable, 'Data', data);
                 end
-            % Validate gain input
             elseif event.Indices(2) == 3
                 newVal = event.NewData;
                 if newVal < -20 || newVal > 20
@@ -243,7 +201,6 @@ guidata(hFig,data);
                 return;
             end
             
-            % Add new row with default values
             lastEndFreq = data{end,2};
             newEndFreq = min(20000, lastEndFreq + 1000);
             newRow = {lastEndFreq, newEndFreq, 0};
@@ -262,7 +219,7 @@ guidata(hFig,data);
         function saveCustomSettings(~,~)
             data = get(hTable, 'Data');
             bands = cell2mat(data(:,1:2)');
-            bands = unique([bands(:); 20000]'); % Ensure last band is 20kHz and no duplicates
+            bands = unique([bands(:); 20000]');
             
             % Check if frequencies are in order
             if ~issorted(bands)
@@ -283,20 +240,18 @@ guidata(hFig,data);
         function processCustomAudio(~,~)
             data = get(hTable, 'Data');
             bands = cell2mat(data(:,1:2)');
-            bands = unique([bands(:); 20000]'); % Ensure last band is 20kHz and no duplicates
+            bands = unique([bands(:); 20000]'); 
             
-            % Check if frequencies are in order
             if ~issorted(bands)
                 errordlg('Frequency bands must be in increasing order', 'Invalid Input');
                 return;
             end
             
-            % Store custom settings
             d = guidata(hFig);
             d.CustomBands = bands;
             d.CustomGains = cell2mat(data(:,3)');
             d.CustomMode = true;
-            d.CustomProcessing = true; % Flag for custom processing
+            d.CustomProcessing = true; 
             
             % Clear existing plots
             for k = 1:6
@@ -305,11 +260,10 @@ guidata(hFig,data);
                 grid(d.hAxes(k), 'on');
             end
             
-            % Process audio with custom settings
-            d = processAudio(d, true); % Get the updated handles
-            guidata(hFig, d); % Store the updated handles
+            % Process audio 
+            d = processAudio(d, true); 
+            guidata(hFig, d);
             
-            % Close the custom dialog
             if ~isempty(d.CustomFig) && ishandle(d.CustomFig)
                 delete(d.CustomFig);
                 d.CustomFig = [];
@@ -325,7 +279,7 @@ guidata(hFig,data);
             d = guidata(hFig);
             d.CustomFig = [];
             guidata(hFig, d);
-            delete(gcbf); % Close the custom window
+            delete(gcbf); 
         end
     end
 
@@ -347,14 +301,13 @@ guidata(hFig,data);
             return; 
         end
         
-        % Clear existing plots
         for k = 1:6
             cla(d.hAxes(k)); 
             axis(d.hAxes(k), 'on');
             grid(d.hAxes(k), 'on');
         end
         
-        % Process in standard mode (9 bands)
+        % Process in standard mode
         d.CustomProcessing = false;
         d = processAudio(d, false);
         guidata(hFig, d);
@@ -368,7 +321,7 @@ guidata(hFig,data);
                 gains = d.CustomGains;
                 numBands = length(gains);
             else
-                % Process with standard settings (9 bands)
+                % Process with standard mde
                 bands = d.StandardBands;
                 gains = zeros(1,9);
                 for i = 1:9
@@ -397,9 +350,7 @@ guidata(hFig,data);
             
             filters(1:numBands) = struct('b',[],'a',[],'y',[]);
             
-            % Process each band
             for i = 1:numBands
-                % Original frequency normalization
                 Wn = bands(i:i+1)*2/fs0;
                 if Wn(1) == 0, Wn(1) = eps; end
                 if Wn(2) >= 1, Wn(2) = 1-eps; end
@@ -425,20 +376,18 @@ guidata(hFig,data);
                     end
                 end
                 
-                % Apply gain (convert from dB to linear)
+                % Convert from dB to linear
                 g_db = gains(i);
                 g_lin = 10^(g_db/20);
                 
-                % Filter the signal
+                % Filter
                 y = g_lin * filter(b, a, sig);
                 
-                % Store filter parameters and output
                 filters(i).b = b; 
                 filters(i).a = a; 
                 filters(i).y = y;
             end
             
-            % Combine all bands and normalize
             out = sum(cat(2, filters.y), 2);
             out = out / max(abs(out));
             
@@ -449,10 +398,9 @@ guidata(hFig,data);
             d.Filters = filters; 
             d.CurrentFig = 1;
             d.Bands = bands;
-            d.BandNum = numBands;  % Store actual number of bands
-            d.ShowSummary = false; % Reset summary flag
+            d.BandNum = numBands;  
+            d.ShowSummary = false; 
             
-            % Plot the first band
             plotCycle(d, 1);
             
             msgbox('Audio processed successfully!', 'Success', 'help');
@@ -482,7 +430,6 @@ guidata(hFig,data);
                 set(d.hAxes(k), 'Visible', 'on');
             end
 
-            % Plot band-specific data
             f = d.Filters(idx);
             fs0 = d.fs;
         
@@ -526,16 +473,14 @@ guidata(hFig,data);
             xlabel(d.hAxes(6), 'Frequency (Hz)'); ylabel(d.hAxes(6), 'Magnitude');
             xlim(d.hAxes(6), [-fs0/2 fs0/2]);
         
-            % Poles and Zeros plot (axis 7)
+            % Poles and Zeros plot
             axes(d.hAxes(7));
             zplane(f.b, f.a);
             title(d.hAxes(7), 'Poles and Zeros');
             grid(d.hAxes(7), 'on');
             
-            % Show all axes
             set(d.hAxes(1:7), 'Visible', 'on');
         else
-            % Configure 2x2 grid
             set(d.hAxes(1), 'Position', [0.05 0.60 0.45 0.35]);
             set(d.hAxes(2), 'Position', [0.52 0.60 0.45 0.35]);
             set(d.hAxes(3), 'Position', [0.05 0.15 0.45 0.35]);
@@ -585,9 +530,6 @@ guidata(hFig,data);
             ylabel('Magnitude');
             xlim([-fs/2 fs/2]);
 
-            %Outputting 4x and 1/2 sample rate
-            audiowrite('SampleMul4.wav', d.OutputSignal, d.newFS * 4);
-            audiowrite('SampleDiv2.wav', d.OutputSignal, d.newFS / 2);
         end
         d.CurrentFig = idx;
         guidata(hFig, d);
@@ -596,7 +538,7 @@ guidata(hFig,data);
     function onNextPlot(~,~)
         d = guidata(hFig); 
         if ~isempty(d.Filters)
-            maxIdx = d.BandNum + 1; % Bands + summary
+            maxIdx = d.BandNum + 1;
             newIdx = min(maxIdx, d.CurrentFig + 1);
             plotCycle(d, newIdx);
         end
@@ -632,4 +574,4 @@ guidata(hFig,data);
             guidata(hFig, d);
         end
     end
-end
+end 
