@@ -401,6 +401,9 @@ guidata(hFig,data);
             d.BandNum = numBands;  
             d.ShowSummary = false; 
             
+            % Outputting 4x and 1/2 sample rate
+            audiowrite('SampleMul4.wav', d.OutputSignal, d.newFS * 4);
+            audiowrite('SampleDiv2.wav', d.OutputSignal, d.newFS / 2);
             plotCycle(d, 1);
             
             msgbox('Audio processed successfully!', 'Success', 'help');
