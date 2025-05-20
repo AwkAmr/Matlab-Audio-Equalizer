@@ -47,7 +47,7 @@ for i=1:9
     posY = startY-(9+i)*rowHeight-8*spacing;
     uicontrol(hLeft,'Style','text','String',bandNames{i},'Units','normalized','Position',[0.05 posY 0.4 rowHeight],'HorizontalAlignment','left', 'BackgroundColor',[0.94 0.94 0.94]);
     
-    hSliders(i) = uicontrol(hLeft,'Style','slider','Min',0,'Max',100,'Value',0, 'SliderStep',[0.01 0.1],'Units','normalized','Position',[0.45 posY 0.45 rowHeight],'Callback',@updateGainLabel, 'BackgroundColor',[0.9 0.9 1]);
+    hSliders(i) = uicontrol(hLeft,'Style','slider','Min',-20,'Max',20,'Value',0, 'SliderStep',[0.01 0.1],'Units','normalized','Position',[0.45 posY 0.45 rowHeight],'Callback',@updateGainLabel, 'BackgroundColor',[0.9 0.9 1]);
     
     hGainVals(i) = uicontrol(hLeft,'Style','text','String','0 dB','Units','normalized','Position',[0.92 posY 0.08 rowHeight],'BackgroundColor','white');
 end
@@ -57,14 +57,15 @@ uicontrol(hLeft,'Style','pushbutton','String','Process Audio','FontSize',11,'Fon
 
 %% Right panel
 hAxes = gobjects(7,1);
-plotStartY = 0.8; 
+plotStartY = 0.82; 
 plotHeight = 0.15; 
+plotWidth = 0.41;
 verticalStep = 0.2;
 
 for i = 1:6
     row = ceil(i/2);
     col = mod(i-1,2)+1;
-    axPos = [0.05 + 0.47*(col-1), plotStartY - verticalStep*(row-1), 0.45, plotHeight];
+    axPos = [0.05 + 0.47*(col-1), plotStartY - verticalStep*(row-1), plotWidth, plotHeight];
     hAxes(i) = axes('Parent',hRight,'Units','normalized','Position',axPos,'Box','on', 'XGrid','on', 'YGrid','on');
     axis(hAxes(i), 'on');
 end
@@ -82,7 +83,7 @@ uicontrol(hRight,'Style','pushbutton','String','Play','FontSize',11,'FontWeight'
 uicontrol(hRight,'Style','pushbutton','String','Stop','FontSize',11,'FontWeight','bold','Units','normalized','Position',[0.65 controlY 0.12 controlHeight],'Callback',@onStop, 'BackgroundColor',[1 0.7 0.7]);
 
 %% Store Data
-data = struct('hFiltType',hFiltType,'hDesign',hDesign,'hOrder',hOrder,'hRec',hRec,'hOrigSR',hOrigSR,'hNewSR',hNewSR,'hSliders',{hSliders},'hGainVals',{hGainVals},'hAxes',{hAxes},'Signal',[],'fs',[],'Filters',[],'BandNum',9,'Player',[],'OutputSignal',[],'CurrentFig',1, 'Playing', false, 'Bands', [0, 200, 500, 800, 1200, 3000, 6000, 12000, 16000, 20000],'CustomMode', false, 'CustomBands', [], 'CustomGains', [], 'StandardBands', [0, 200, 500, 800, 1200, 3000, 6000, 12000, 16000, 20000],'CustomFig', [], 'CustomTable', [], 'CustomProcessing', false,'ShowSummary', false, 'SummaryPlots', []); % New fields for summary
+data = struct('hFiltType',hFiltType,'hDesign',hDesign,'hOrder',hOrder,'hRec',hRec,'hOrigSR',hOrigSR,'hNewSR',hNewSR,'hSliders',{hSliders},'hGainVals',{hGainVals},'hAxes',{hAxes},'Signal',[],'fs',[],'Filters',[],'BandNum',9,'Player',[],'OutputSignal',[],'CurrentFig',1, 'Playing', false, 'Bands', [0, 200, 500, 800, 1200, 3000, 6000, 12000, 16000, 20000],'CustomMode', false, 'CustomBands', [], 'CustomGains', [], 'StandardBands', [0, 200, 500, 800, 1200, 3000, 6000, 12000, 16000, 20000],'CustomFig', [], 'CustomTable', [], 'CustomProcessing', false,'ShowSummary', false, 'SummaryPlots', []);
 guidata(hFig,data);
 
 %% Callbacks
@@ -91,9 +92,9 @@ guidata(hFig,data);
         ft = get(d.hFiltType,'Value');
         des = get(d.hDesign,'String'); dv = get(d.hDesign,'Value');
         if ft==1
-            rec = sprintf('FIR %s 20–200',des{dv});
+            rec = sprintf('FIR %s 100–1000',des{dv});
         else
-            rec = sprintf('IIR %s 2–10',des{dv});
+            rec = sprintf('IIR %s 1–2',des{dv});
         end
         set(d.hRec,'String',['Recommended: ' rec]);
     end
@@ -106,7 +107,7 @@ guidata(hFig,data);
     end
 
     function onLoadAudio(~,~)
-        [f,p] = uigetfile({'*.wav;*.mp3;*.ogg;*.flac','Audio Files (*.wav, *.mp3, *.ogg, *.flac)'});
+        [f,p] = uigetfile({'*.wav','Audio Files (*.wav)'});
         if isequal(f,0), return; end
         
         try
@@ -401,11 +402,10 @@ guidata(hFig,data);
             d.BandNum = numBands;  
             d.ShowSummary = false; 
             
+            plotCycle(d, 1);
             % Outputting 4x and 1/2 sample rate
             audiowrite('SampleMul4.wav', d.OutputSignal, d.newFS * 4);
             audiowrite('SampleDiv2.wav', d.OutputSignal, d.newFS / 2);
-            plotCycle(d, 1);
-            
             msgbox('Audio processed successfully!', 'Success', 'help');
         catch ME
             errordlg(sprintf('Error processing audio:\n%s', ME.message), 'Processing Error');
@@ -419,14 +419,15 @@ guidata(hFig,data);
 
         if idx <= d.BandNum
             % Restore original axes positions
+
             positions = [
-                [0.05 0.80 0.45 0.18];  % Magnitude
-                [0.52 0.80 0.45 0.18];  % Phase
-                [0.05 0.58 0.45 0.18];  % Step
-                [0.52 0.58 0.45 0.18];  % Impulse
-                [0.05 0.36 0.45 0.18];  % Time
-                [0.52 0.36 0.45 0.18];  % Frequency
-                [0.05 0.14 0.90 0.18];  % Poles/Zeros
+                [0.05 plotStartY plotWidth plotHeight];  % Magnitude
+                [0.52 plotStartY plotWidth plotHeight];  % Phase
+                [0.05 0.58 plotWidth plotHeight];  % Step
+                [0.52 0.58 plotWidth plotHeight];  % Impulse
+                [0.05 0.34 plotWidth plotHeight];  % Time
+                [0.52 0.34 plotWidth plotHeight];  % Frequency
+                [0.05 0.13 0.52-0.05+plotWidth plotHeight];  % Poles/Zeros
             ];
             for k = 1:7
                 set(d.hAxes(k), 'Position', positions(k,:));
@@ -484,10 +485,12 @@ guidata(hFig,data);
             
             set(d.hAxes(1:7), 'Visible', 'on');
         else
-            set(d.hAxes(1), 'Position', [0.05 0.60 0.45 0.35]);
-            set(d.hAxes(2), 'Position', [0.52 0.60 0.45 0.35]);
-            set(d.hAxes(3), 'Position', [0.05 0.15 0.45 0.35]);
-            set(d.hAxes(4), 'Position', [0.52 0.15 0.45 0.35]);
+            summaryPlotHeight = 0.35; 
+            summaryPlotWidth = 0.41;
+            set(d.hAxes(1), 'Position', [0.05 0.60 summaryPlotWidth summaryPlotHeight]);
+            set(d.hAxes(2), 'Position', [0.52 0.60 summaryPlotWidth summaryPlotHeight]);
+            set(d.hAxes(3), 'Position', [0.05 0.15 summaryPlotWidth summaryPlotHeight]);
+            set(d.hAxes(4), 'Position', [0.52 0.15 summaryPlotWidth summaryPlotHeight]);
             set(d.hAxes(1:4), 'Visible', 'on');
             
             % Plot data
