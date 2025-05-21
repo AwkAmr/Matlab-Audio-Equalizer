@@ -371,7 +371,7 @@ guidata(hFig,data);
                         case 'Butterworth'
                             [b,a] = butter(orderVal, Wn);
                         case 'Chebyshev I'
-                            [b,a] = cheby1(orderVal, 1, Wn);
+                            [b,a] = cheby1(orderVal, 3, Wn);
                         case 'Chebyshev II'
                             [b,a] = cheby2(orderVal, 40, Wn);
                     end
